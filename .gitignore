@@ -1,0 +1,15 @@
+﻿node_modules/
+.expo/
+.expo-shared/
+dist/
+build/
+web-build/
+.env*
+.DS_Store
+*.log
+coverage/
+.idea/
+.vscode/
+*.iml
+package-lock.json
+*.expo/*
