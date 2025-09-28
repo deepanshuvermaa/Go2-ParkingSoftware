@@ -1,0 +1,17 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm install && npx prisma generate"
+
+[deploy]
+startCommand = "npx prisma migrate deploy && npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 10
+
+[[services]]
+name = "go2-parking-backend"
+type = "web"
+
+[services.go2-parking-backend]
+port = 3000

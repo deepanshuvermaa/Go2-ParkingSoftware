@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  ATTENDANT
+}
+
+enum TicketStatus {
+  ACTIVE
+  PAID
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  MOBILE
+  ONLINE
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  passwordHash   String
+  name           String
+  role           Role      @default(ATTENDANT)
+  locationId     String?
+  location       Location? @relation(fields: [locationId], references: [id])
+  isActive       Boolean   @default(true)
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  createdTickets Ticket[]  @relation("CreatedTickets")
+  paidTickets    Ticket[]  @relation("PaidTickets")
+  sessions       Session[]
+  activities     ActivityLog[]
+
+  @@index([email])
+  @@index([locationId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken  String   @unique
+  refreshToken String   @unique
+  deviceId     String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([accessToken])
+  @@index([refreshToken])
+  @@index([userId])
+}
+
+model Location {
+  id           String   @id @default(uuid())
+  name         String
+  address      String?
+  capacity     Int      @default(100)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users        User[]
+  tickets      Ticket[]
+  pricingRules PricingRule[]
+
+  @@index([name])
+}
+
+model Ticket {
+  id             String        @id @default(uuid())
+  ticketNumber   String        @unique
+  vehicleNumber  String
+  vehicleType    String        @default("CAR")
+  locationId     String
+  location       Location      @relation(fields: [locationId], references: [id])
+  status         TicketStatus  @default(ACTIVE)
+  amount         Float         @default(0)
+  paymentMethod  PaymentMethod?
+  entryTime      DateTime      @default(now())
+  exitTime       DateTime?
+  duration       Int?          // Duration in minutes
+  createdById    String
+  createdBy      User          @relation("CreatedTickets", fields: [createdById], references: [id])
+  paidById       String?
+  paidBy         User?         @relation("PaidTickets", fields: [paidById], references: [id])
+  notes          String?
+  isSynced       Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([ticketNumber])
+  @@index([vehicleNumber])
+  @@index([locationId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([entryTime])
+}
+
+model PricingRule {
+  id              String   @id @default(uuid())
+  locationId      String
+  location        Location @relation(fields: [locationId], references: [id])
+  vehicleType     String   @default("CAR")
+  basePrice       Float    // Base price for first hour
+  hourlyRate      Float    // Rate per hour after first hour
+  dailyMax        Float?   // Maximum daily charge
+  overtimeRate    Float?   // Rate for overtime parking
+  gracePeriod     Int      @default(15) // Grace period in minutes
+  isActive        Boolean  @default(true)
+  effectiveFrom   DateTime @default(now())
+  effectiveTo     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([locationId, vehicleType, effectiveFrom])
+  @@index([locationId])
+  @@index([vehicleType])
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model Report {
+  id         String   @id @default(uuid())
+  type       String   // daily, weekly, monthly, custom
+  locationId String?
+  startDate  DateTime
+  endDate    DateTime
+  data       Json
+  createdAt  DateTime @default(now())
+
+  @@index([type])
+  @@index([locationId])
+  @@index([startDate, endDate])
+}
