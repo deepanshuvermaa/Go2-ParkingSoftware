@@ -1,11 +1,11 @@
 ﻿{
   "expo": {
-    "name": "Go2-ParkingSoftware",
-    "slug": "go2-parkingsoftware",
+    "name": "Go2 Parking",
+    "slug": "go2-parking",
     "version": "1.0.0",
     "scheme": "go2parking",
     "orientation": "portrait",
-    "owner": "",
+    "owner": "deepanshuvermaa",
     "userInterfaceStyle": "automatic",
     "jsEngine": "hermes",
     "icon": "./assets/images/icon.png",
@@ -69,9 +69,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "your-eas-project-id"
       },
-      "apiBaseUrl": "https://api.go2parking.example",
+      "apiBaseUrl": "https://web-production-764e.up.railway.app",
       "sentryDsn": ""
     }
   }
