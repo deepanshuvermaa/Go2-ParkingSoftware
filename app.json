@@ -45,24 +45,17 @@
       }
     },
     "plugins": [
-      [
-        "react-native-ble-plx",
-        {
-          "isBackgroundEnabled": true,
-          "modes": ["peripheral", "central"],
-          "bluetoothAlwaysPermission": "Allow Go2 Parking to use Bluetooth to connect with printers.",
-          "bluetoothPeripheralPermission": "Allow Go2 Parking to communicate with printers while in use."
-        }
-      ],
+      "expo-router",
       [
         "expo-build-properties",
         {
-          "ios": {
-            "useFrameworks": "static"
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "minSdkVersion": 21
           }
         }
-      ],
-      "expo-router"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
