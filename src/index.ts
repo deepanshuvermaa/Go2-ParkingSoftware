@@ -13,6 +13,7 @@ import ticketRoutes from './routes/ticket.routes';
 import locationRoutes from './routes/location.routes';
 import reportRoutes from './routes/report.routes';
 import pricingRoutes from './routes/pricing.routes';
+import initDatabase from './database/init';
 
 dotenv.config();
 
@@ -57,10 +58,15 @@ app.use('/api/pricing', pricingRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
+
+  // Initialize database with default data if needed
+  if (process.env.NODE_ENV === 'production') {
+    await initDatabase();
+  }
 });
 
 process.on('SIGTERM', () => {
