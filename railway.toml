@@ -6,12 +6,3 @@ buildCommand = "npm install && npx prisma generate && npx prisma db push && npm 
 startCommand = "npm start"
 healthcheckPath = "/health"
 healthcheckTimeout = 100
-restartPolicyType = "on-failure"
-restartPolicyMaxRetries = 10
-
-[[services]]
-name = "go2-parking-backend"
-type = "web"
-
-[services.go2-parking-backend]
-port = 3000
