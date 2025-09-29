@@ -62,10 +62,13 @@ const server = app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
+  console.log(`DATABASE_URL exists: ${!!process.env.DATABASE_URL}`);
 
   // Initialize database with default data if needed
-  if (process.env.NODE_ENV === 'production') {
-    await initDatabase();
+  if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
+    setTimeout(async () => {
+      await initDatabase();
+    }, 5000); // Delay initialization to ensure database is ready
   }
 });
 

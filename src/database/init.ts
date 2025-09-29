@@ -1,10 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
-
 async function initDatabase() {
   try {
+    // Check if DATABASE_URL is available
+    if (!process.env.DATABASE_URL) {
+      console.log('DATABASE_URL not found, skipping database initialization');
+      return;
+    }
+
+    const prisma = new PrismaClient();
+
     console.log('Initializing database...');
 
     // Check if database is already initialized

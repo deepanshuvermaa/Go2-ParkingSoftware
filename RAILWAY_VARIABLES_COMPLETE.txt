@@ -1,0 +1,13 @@
+ADD THESE TO RAILWAY VARIABLES TAB (Raw Editor):
+
+DATABASE_URL=postgresql://postgres:aWumXbmxXnsdsYmJQyAhasoErMjqaTSs@postgres.railway.internal:5432/railway
+DATABASE_PUBLIC_URL=postgresql://postgres:aWumXbmxXnsdsYmJQyAhasoErMjqaTSs@maglev.proxy.rlwy.net:28429/railway
+NODE_ENV=production
+PORT=3000
+JWT_SECRET=808bf6583315eaee564d73c10653fec950d501862a581183a723a9eff5a04e33
+JWT_EXPIRES_IN=7d
+JWT_REFRESH_EXPIRES_IN=30d
+CORS_ORIGIN=https://web-production-764e.up.railway.app,http://localhost:8081,http://localhost:19000
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+LOG_LEVEL=info
