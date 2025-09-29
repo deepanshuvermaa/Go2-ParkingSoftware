@@ -164,11 +164,10 @@ async function initDatabase() {
     console.log('Attendant 1: attendant1@go2parking.com / Attendant@123');
     console.log('Attendant 2: attendant2@go2parking.com / Attendant@123');
 
+    await prisma.$disconnect();
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     // Don't throw error to prevent deployment failure
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
