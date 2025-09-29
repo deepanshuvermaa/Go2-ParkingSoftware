@@ -50,11 +50,15 @@ const SettingsScreen = () => {
       </Card>
 
       {hasRole('OWNER', 'MANAGER') ? (
-        <Card style={{ gap: 16 }}>
-          <SectionHeader title="Operations" />
-          <Button label="Pricing rules" onPress={() => router.push('/pricing-settings')} />
-          <Button label="Invite teammates" variant="secondary" onPress={() => router.push('/register')} />
-        </Card>
+        <>
+          <Card style={{ gap: 16 }}>
+            <SectionHeader title="Operations" />
+            <Button label="Vehicle Rates" onPress={() => router.push('/vehicle-rates')} />
+            <Button label="Print Settings" onPress={() => router.push('/print-settings')} />
+            <Button label="Pricing Rules" onPress={() => router.push('/pricing-settings')} />
+            <Button label="Invite Teammates" variant="secondary" onPress={() => router.push('/register')} />
+          </Card>
+        </>
       ) : null}
     </Screen>
   );

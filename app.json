@@ -1,11 +1,11 @@
-﻿{
+{
   "expo": {
     "name": "Go2 Parking",
     "slug": "go2-parking",
     "version": "1.0.0",
     "scheme": "go2parking",
     "orientation": "portrait",
-    "owner": "deepanshuvermaa",
+    "owner": "deepanshuverma",
     "userInterfaceStyle": "automatic",
     "jsEngine": "hermes",
     "icon": "./assets/images/icon.png",
@@ -18,7 +18,9 @@
       "fallbackToCacheTimeout": 0,
       "url": ""
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.go2.parkingsoftware",
@@ -44,28 +46,16 @@
         "backgroundColor": "#0F172A"
       }
     },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "compileSdkVersion": 34,
-            "targetSdkVersion": 34,
-            "minSdkVersion": 21
-          }
-        }
-      ]
-    ],
+    "plugins": [],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "eas": {
-        "projectId": "your-eas-project-id"
-      },
       "apiBaseUrl": "https://web-production-764e.up.railway.app",
-      "sentryDsn": ""
+      "sentryDsn": "",
+      "eas": {
+        "projectId": "f2a08150-81bc-40c4-b7cc-cc8960858e34"
+      }
     }
   }
 }

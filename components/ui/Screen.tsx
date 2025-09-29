@@ -1,5 +1,6 @@
 ﻿import { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { palette } from '@/constants/colors';
 
 interface ScreenProps {
@@ -11,19 +12,27 @@ interface ScreenProps {
 export const Screen = ({ children, scrollable = true, testID }: ScreenProps) => {
   if (scrollable) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.content} testID={testID}>
-        {children}
-      </ScrollView>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.content} testID={testID}>
+          {children}
+        </ScrollView>
+      </SafeAreaView>
     );
   }
   return (
-    <View style={[styles.container, styles.content]} testID={testID}>
-      {children}
-    </View>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <View style={[styles.container, styles.content]} testID={testID}>
+        {children}
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: palette.background,
+  },
   container: {
     flex: 1,
     backgroundColor: palette.background,

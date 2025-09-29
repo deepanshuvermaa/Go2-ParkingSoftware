@@ -8,7 +8,9 @@ export const storageKeys = {
   settings: 'go2.settings',
   userProfile: 'go2.auth.profile',
   session: 'go2.auth.session',
-  printerProfile: 'go2.printer.profile'
+  printerProfile: 'go2.printer.profile',
+  vehicleRates: 'go2.vehicle.rates',
+  vehicleCategories: 'go2.vehicle.categories'
 } as const;
 
 export const storage = {
@@ -33,7 +35,7 @@ export const secureStorage = {
       keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY
     });
   },
-  async delete(key: string) {
+  async remove(key: string) {
     return SecureStore.deleteItemAsync(key);
   }
 };

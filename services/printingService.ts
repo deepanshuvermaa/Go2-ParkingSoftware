@@ -1,25 +1,17 @@
-﻿import { BleManager, Device, Subscription } from 'react-native-ble-plx';
-import { Platform } from 'react-native';
-import { Buffer } from 'buffer';
+﻿// Using Bluetooth Classic for thermal printer support (same as Quickbill)
+import { bluetoothPrinter, ThermalPrinter } from './bluetoothThermalPrinter';
 import { PrinterConnectionState, PrinterDevice, PrinterProfile } from '@/types';
 import { logger } from '@/utils/logger';
 import { storage, storageKeys } from '@/utils/storage';
 import { isoNow } from '@/utils/date';
 
-const SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
-const CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
-
 type Listener<T> = (value: T) => void;
 
-const toBase64 = (value: string) => Buffer.from(value, 'utf8').toString('base64');
-
 class PrintingService {
-  private manager = new BleManager();
   private devices: PrinterDevice[] = [];
   private state: PrinterConnectionState = 'DISCONNECTED';
   private selected?: PrinterDevice;
   private profile?: PrinterProfile;
-  private subscriptions: Subscription[] = [];
   private stateListeners = new Set<Listener<PrinterConnectionState>>();
   private devicesListeners = new Set<Listener<PrinterDevice[]>>();
   private selectionListeners = new Set<Listener<PrinterDevice | undefined>>();
@@ -94,100 +86,68 @@ class PrintingService {
     this.devices = [];
     this.emitDevices();
 
-    await this.manager.stopDeviceScan();
+    try {
+      const printers = await bluetoothPrinter.scanForPrinters();
 
-    return new Promise<void>((resolve, reject) => {
-      let resolved = false;
+      // Convert ThermalPrinter to PrinterDevice format
+      this.devices = printers.map(p => ({
+        id: p.id,
+        name: p.name,
+        model: p.name,
+        bonded: p.bonded
+      }));
 
-      this.manager.startDeviceScan(null, { allowDuplicates: false }, (error, device) => {
-        if (error) {
-          logger.error('Printer scan error', { error: error.message });
-          this.setState('ERROR');
-          this.manager.stopDeviceScan();
-          if (!resolved) {
-            resolved = true;
-            reject(error);
-          }
-          return;
-        }
-
-        if (device) {
-          this.handleDeviceDiscovered(device);
-        }
-      });
-
-      setTimeout(() => {
-        this.manager.stopDeviceScan();
-        if (!resolved) {
-          resolved = true;
-          this.setState(this.selected ? 'CONNECTED' : 'DISCONNECTED');
-          resolve();
-        }
-      }, timeoutMs);
-    });
-  }
-
-  private handleDeviceDiscovered(device: Device) {
-    const candidate: PrinterDevice = {
-      id: device.id,
-      name: device.name ?? 'Unnamed printer',
-      model: device.localName ?? undefined,
-      manufacturer: device.manufacturerData ?? undefined,
-      rssi: device.rssi ?? undefined,
-      bonded: Boolean(device.isBonded)
-    };
-
-    if (!this.devices.some((existing) => existing.id === candidate.id)) {
-      this.devices = [...this.devices, candidate];
       this.emitDevices();
+      this.setState(this.selected ? 'CONNECTED' : 'DISCONNECTED');
+      return;
+    } catch (error) {
+      logger.error('Printer scan error', { error });
+      this.setState('ERROR');
+      throw error;
     }
   }
+
+  // Device discovery is now handled by bluetoothPrinter.scanForPrinters()
 
   async connectToPrinter(deviceId: string) {
     try {
       this.setState('CONNECTING');
-      await this.manager.stopDeviceScan();
 
-      const device = await this.manager.connectToDevice(deviceId, {
-        requestMTU: 512
-      });
-
-      const connected = await device.discoverAllServicesAndCharacteristics();
-      this.selected = {
-        id: connected.id,
-        name: connected.name ?? 'Printer',
-        model: connected.localName ?? undefined,
-        bonded: Boolean(connected.isBonded)
-      };
-
-      if (Platform.OS === 'android') {
-        await connected.requestConnectionPriority(1);
+      // Find the printer in our devices list
+      const printerDevice = this.devices.find(d => d.id === deviceId);
+      if (!printerDevice) {
+        throw new Error('Printer not found');
       }
 
-      this.profile = {
-        deviceId: connected.id,
-        name: this.selected.name,
-        preferred: true,
-        paperWidth: 58,
-        density: 3,
-        autoPrint: true,
-        lastConnectedAt: isoNow()
+      // Create ThermalPrinter object for connection
+      const printer: ThermalPrinter = {
+        id: printerDevice.id,
+        name: printerDevice.name,
+        address: deviceId, // Using ID as address
+        bonded: printerDevice.bonded || false,
+        connected: false
       };
 
-      await storage.set(storageKeys.printerProfile, this.profile);
+      const connected = await bluetoothPrinter.connectToPrinter(printer);
 
-      this.subscriptions.forEach((sub) => sub.remove());
-      this.subscriptions = [
-        connected.onDisconnected(() => {
-          logger.warn('Printer disconnected');
-          this.selected = undefined;
-          this.setState('DISCONNECTED');
-          this.emitSelection();
-        })
-      ];
+      if (connected) {
+        this.selected = printerDevice;
+        this.profile = {
+          deviceId: printerDevice.id,
+          name: printerDevice.name,
+          preferred: true,
+          paperWidth: 58,
+          density: 3,
+          autoPrint: true,
+          lastConnectedAt: isoNow()
+        };
 
-      this.setState('CONNECTED');
-      this.emitSelection();
+        await storage.set(storageKeys.printerProfile, this.profile);
+        this.setState('CONNECTED');
+        this.emitSelection();
+      } else {
+        throw new Error('Failed to connect');
+      }
     } catch (error) {
       this.setState('ERROR');
       logger.error('Failed to connect printer', { error });
@@ -200,7 +160,7 @@ class PrintingService {
       return;
     }
     try {
-      await this.manager.cancelDeviceConnection(this.selected.id);
+      await bluetoothPrinter.disconnect();
     } catch (error) {
       logger.warn('Error disconnecting printer', { error });
     } finally {
@@ -216,19 +176,44 @@ class PrintingService {
     if (!this.selected) {
       throw new Error('No printer connected');
     }
-    this.setState('CONNECTING');
+
     try {
-      const device = await this.manager.connectToDevice(this.selected.id, { autoConnect: true });
-      const data = `${payload}\n\n\n`;
-      const base64 = toBase64(data);
-      await device.writeCharacteristicWithoutResponseForService(
-        SERVICE_UUID,
-        CHARACTERISTIC_UUID,
-        base64
-      );
+      await bluetoothPrinter.printText(payload);
       this.setState('CONNECTED');
     } catch (error) {
       logger.error('Printing failed', { error });
+      this.setState('ERROR');
+      throw error;
+    }
+  }
+
+  // New method to print parking tickets
+  async printParkingTicket(ticket: any, isCheckout: boolean = false) {
+    if (!this.selected) {
+      throw new Error('No printer connected');
+    }
+
+    try {
+      await bluetoothPrinter.printParkingTicket(ticket, isCheckout);
+      this.setState('CONNECTED');
+    } catch (error) {
+      logger.error('Printing ticket failed', { error });
+      this.setState('ERROR');
+      throw error;
+    }
+  }
+
+  // Test print method
+  async testPrint() {
+    if (!this.selected) {
+      throw new Error('No printer connected');
+    }
+
+    try {
+      await bluetoothPrinter.testPrint();
+      this.setState('CONNECTED');
+    } catch (error) {
+      logger.error('Test print failed', { error });
       this.setState('ERROR');
       throw error;
     }
